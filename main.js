@@ -173,9 +173,40 @@ document.getElementById('add-concept-btn').addEventListener('click', () => {
   // Attach form listener after rendering Add Concept view
   const form = document.getElementById('add-concept-form');
   if (form) {
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      alert('フォームが送信されました！ (UIのみ、データは保存されていません)');
+
+      const title = document.getElementById('concept-name').value.trim();
+      const explanation = document.getElementById('concept-explanation').value.trim();
+
+      if (!title || !explanation) {
+        alert('コンセプト名と解説を入力してください。');
+        return;
+      }
+
+      const newId = crypto.randomUUID();
+
+      try {
+        const { error } = await supabase.from('concepts').insert([
+          { id: newId, title, explanation }
+        ]);
+
+        if (error) throw error;
+
+        alert('新しいコンセプトが保存されました！');
+
+        // Refresh concepts list
+        const updatedData = await fetchConcepts();
+        renderSidebar(updatedData);
+
+        // View new concept
+        updateActiveNav(newId);
+        setView('concept', newId);
+
+      } catch (error) {
+        console.error('コンセプトの保存中にエラーが発生しました:', error);
+        alert('コンセプトの保存に失敗しました。');
+      }
     });
   }
 });
