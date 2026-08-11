@@ -1,28 +1,35 @@
-// Static Data
-const concepts = {
-  smash: {
-    title: 'Smash Concept',
-    explanation: 'The Smash concept is a high-low read on the outside. It typically consists of an outside receiver running a short hitch or curl route, and an inside receiver (or tight end) running a deeper corner route. This stresses the cornerback in a Cover 2 defense, forcing them to choose between coming up to cover the short route or dropping back to cover the corner route.',
-    explanationImages: ['Explanation Image 1 Placeholder', 'Explanation Image 2 Placeholder'],
-    exampleImages: ['Example Image 1 Placeholder', 'Example Image 2 Placeholder', 'Example Image 3 Placeholder']
-  },
-  mesh: {
-    title: 'Mesh Concept',
-    explanation: 'The Mesh concept involves two receivers crossing paths at a shallow depth across the middle of the field. This creates a natural rub or pick, which is highly effective against man coverage. Against zone coverage, the crossing receivers look for open voids to settle into.',
-    explanationImages: ['Explanation Image 1 Placeholder', 'Explanation Image 2 Placeholder'],
-    exampleImages: ['Example Image 1 Placeholder', 'Example Image 2 Placeholder']
-  },
-  stick: {
-    title: 'Stick Concept',
-    explanation: 'The Stick concept is a quick passing game staple. It typically features an outside receiver running a vertical clear-out route, an inside receiver running a quick out or arrow route to the flat, and a third receiver (often a tight end) running the "stick" route—a short route where they turn and sit in the open zone, usually at 5-6 yards.',
-    explanationImages: ['Explanation Image 1 Placeholder', 'Explanation Image 2 Placeholder'],
-    exampleImages: ['Example Image 1 Placeholder', 'Example Image 2 Placeholder', 'Example Image 3 Placeholder']
-  },
-  flood: {
-    title: 'Flood Concept',
-    explanation: 'The Flood concept is designed to overload one side of the defense\'s zones by placing three receivers at three different depths: deep, intermediate, and short. This creates a vertical stretch on the sideline defenders. A common variation is the "Sail" concept, featuring a go route, a deep out or corner, and a flat route.',
-    explanationImages: ['Explanation Image 1 Placeholder', 'Explanation Image 2 Placeholder'],
-    exampleImages: ['Example Image 1 Placeholder', 'Example Image 2 Placeholder']
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase Client
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Data State
+let concepts = {};
+
+// Fetch Concepts from Supabase
+const fetchConcepts = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('concepts')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    // Convert array to object mapped by id for easier lookup
+    if (data) {
+      concepts = data.reduce((acc, concept) => {
+        acc[concept.id] = concept;
+        return acc;
+      }, {});
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching concepts:", error);
+    return [];
   }
 };
 
@@ -43,9 +50,18 @@ const renderConceptDetail = (conceptKey) => {
   const concept = concepts[conceptKey];
   if (!concept) return renderHome();
 
-  const renderImages = (images) => images.map(img => `
-    <div class="image-placeholder">${img}</div>
-  `).join('');
+  const renderImages = (images) => {
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      return `<div class="image-placeholder">No images available</div>`;
+    }
+    return images.map(img => `
+      <div class="image-placeholder">${img}</div>
+    `).join('');
+  };
+
+  // Safe fallback for images during phase 2 where they aren't stored in DB yet
+  const explanationImages = concept.explanationImages || ['Explanation Image 1 Placeholder', 'Explanation Image 2 Placeholder'];
+  const exampleImages = concept.exampleImages || ['Example Image 1 Placeholder', 'Example Image 2 Placeholder'];
 
   return `
     <div class="content-wrapper">
@@ -59,13 +75,13 @@ const renderConceptDetail = (conceptKey) => {
       <hr class="section-divider" />
       <h2 class="section-title">Concept Explanation</h2>
       <div class="image-gallery">
-        ${renderImages(concept.explanationImages)}
+        ${renderImages(explanationImages)}
       </div>
 
       <hr class="section-divider" />
       <h2 class="section-title">Examples</h2>
       <div class="image-gallery">
-        ${renderImages(concept.exampleImages)}
+        ${renderImages(exampleImages)}
       </div>
     </div>
   `;
@@ -107,6 +123,16 @@ const renderAddConcept = () => `
     </form>
   </div>
 `;
+
+// Sidebar Rendering
+const renderSidebar = (dataList) => {
+  const conceptListEl = document.getElementById('concept-list');
+  if (!conceptListEl || !dataList) return;
+
+  conceptListEl.innerHTML = dataList.map(concept => `
+    <li><a href="#" data-concept="${concept.id}" class="nav-link">${concept.title}</a></li>
+  `).join('');
+};
 
 // App State & Rendering
 const mainContent = document.getElementById('main-content');
@@ -154,5 +180,12 @@ document.getElementById('add-concept-btn').addEventListener('click', () => {
   }
 });
 
+// Initialize App
+const initApp = async () => {
+  const data = await fetchConcepts();
+  renderSidebar(data);
+  setView('home');
+};
+
 // Initial Render
-setView('home');
+initApp();

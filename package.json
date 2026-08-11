@@ -22,5 +22,8 @@
   "homepage": "https://github.com/atsuk07/Paladins-Pass-Concept#readme",
   "devDependencies": {
     "vite": "^8.2.1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.3"
   }
 }
