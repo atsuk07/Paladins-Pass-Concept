@@ -28,7 +28,7 @@ const fetchConcepts = async () => {
 
     return data;
   } catch (error) {
-    console.error("Error fetching concepts:", error);
+    console.error("コンセプトの取得中にエラーが発生しました:", error);
     return [];
   }
 };
@@ -37,11 +37,11 @@ const fetchConcepts = async () => {
 const renderHome = () => `
   <div class="content-wrapper">
     <div class="page-header">
-      <h1>Welcome to Paladins Pass Concept</h1>
-      <p class="page-description">A complete playbook of American football offensive passing concepts.</p>
+      <h1>Paladins Pass Concept へようこそ</h1>
+      <p class="page-description">アメリカンフットボールのオフェンスパスコンセプトの完全なプレイブック。</p>
     </div>
     <div class="concept-explanation">
-      <p>Select a concept from the sidebar to view its details, or add a new one.</p>
+      <p>サイドバーからコンセプトを選択して詳細を表示するか、新しいコンセプトを追加してください。</p>
     </div>
   </div>
 `;
@@ -52,7 +52,7 @@ const renderConceptDetail = (conceptKey) => {
 
   const renderImages = (images) => {
     if (!images || !Array.isArray(images) || images.length === 0) {
-      return `<div class="image-placeholder">No images available</div>`;
+      return `<div class="image-placeholder">画像はありません</div>`;
     }
     return images.map(img => `
       <div class="image-placeholder">${img}</div>
@@ -60,8 +60,8 @@ const renderConceptDetail = (conceptKey) => {
   };
 
   // Safe fallback for images during phase 2 where they aren't stored in DB yet
-  const explanationImages = concept.explanationImages || ['Explanation Image 1 Placeholder', 'Explanation Image 2 Placeholder'];
-  const exampleImages = concept.exampleImages || ['Example Image 1 Placeholder', 'Example Image 2 Placeholder'];
+  const explanationImages = concept.explanationImages || ['解説画像 1 プレースホルダー', '解説画像 2 プレースホルダー'];
+  const exampleImages = concept.exampleImages || ['例の画像 1 プレースホルダー', '例の画像 2 プレースホルダー'];
 
   return `
     <div class="content-wrapper">
@@ -73,13 +73,13 @@ const renderConceptDetail = (conceptKey) => {
       </div>
 
       <hr class="section-divider" />
-      <h2 class="section-title">Concept Explanation</h2>
+      <h2 class="section-title">コンセプトの解説</h2>
       <div class="image-gallery">
         ${renderImages(explanationImages)}
       </div>
 
       <hr class="section-divider" />
-      <h2 class="section-title">Examples</h2>
+      <h2 class="section-title">例</h2>
       <div class="image-gallery">
         ${renderImages(exampleImages)}
       </div>
@@ -90,36 +90,36 @@ const renderConceptDetail = (conceptKey) => {
 const renderAddConcept = () => `
   <div class="content-wrapper">
     <div class="page-header">
-      <h1>Add New Concept</h1>
-      <p class="page-description">Create a new offensive passing concept for the playbook.</p>
+      <h1>新しいコンセプトを追加</h1>
+      <p class="page-description">プレイブック用の新しいオフェンスパスコンセプトを作成します。</p>
     </div>
 
     <form id="add-concept-form">
       <div class="form-group">
-        <label for="concept-name">Concept Name</label>
-        <input type="text" id="concept-name" class="form-control" placeholder="e.g. Verticals" required>
+        <label for="concept-name">コンセプト名</label>
+        <input type="text" id="concept-name" class="form-control" placeholder="例: Verticals" required>
       </div>
 
       <div class="form-group">
-        <label for="concept-explanation">Explanation</label>
-        <textarea id="concept-explanation" class="form-control" placeholder="Describe the concept..." required></textarea>
+        <label for="concept-explanation">解説</label>
+        <textarea id="concept-explanation" class="form-control" placeholder="コンセプトを説明してください..." required></textarea>
       </div>
 
       <div class="form-group">
-        <label>Explanation Images</label>
+        <label>解説画像</label>
         <div class="file-upload-area">
-          Click to upload explanation images (UI Only)
+          クリックして解説画像をアップロード (UIのみ)
         </div>
       </div>
 
       <div class="form-group">
-        <label>Example Images</label>
+        <label>例の画像</label>
         <div class="file-upload-area">
-          Click to upload example images (UI Only)
+          クリックして例の画像をアップロード (UIのみ)
         </div>
       </div>
 
-      <button type="submit" class="btn-primary">Save Concept</button>
+      <button type="submit" class="btn-primary">コンセプトを保存</button>
     </form>
   </div>
 `;
@@ -175,7 +175,7 @@ document.getElementById('add-concept-btn').addEventListener('click', () => {
   if (form) {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      alert('Form submitted! (UI only, data not saved)');
+      alert('フォームが送信されました！ (UIのみ、データは保存されていません)');
     });
   }
 });
