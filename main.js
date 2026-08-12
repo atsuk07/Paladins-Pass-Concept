@@ -7,6 +7,8 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Data State
 let concepts = {};
+let isAdmin = false;
+let currentPassphrase = null;
 
 // Fetch Concepts from Supabase
 const fetchConcepts = async () => {
@@ -156,6 +158,27 @@ const updateActiveNav = (activeConceptKey = null) => {
   });
 };
 
+const updateAdminUI = () => {
+  const addBtn = document.getElementById('add-concept-btn');
+  const adminBtn = document.getElementById('admin-mode-btn');
+  const exitAdminBtn = document.getElementById('exit-admin-btn');
+
+  if (isAdmin) {
+    addBtn.classList.remove('hidden');
+    exitAdminBtn.classList.remove('hidden');
+    adminBtn.classList.add('hidden');
+  } else {
+    addBtn.classList.add('hidden');
+    exitAdminBtn.classList.add('hidden');
+    adminBtn.classList.remove('hidden');
+
+    // If we are on the Add Concept view and lose admin privileges, go home
+    if (mainContent.innerHTML.includes('add-concept-form')) {
+      setView('home');
+    }
+  }
+};
+
 // Event Listeners
 document.getElementById('concept-list').addEventListener('click', (e) => {
   if (e.target.tagName === 'A') {
@@ -166,7 +189,26 @@ document.getElementById('concept-list').addEventListener('click', (e) => {
   }
 });
 
+document.getElementById('admin-mode-btn').addEventListener('click', () => {
+  const passphrase = prompt('管理者パスフレーズを入力してください:');
+  if (passphrase === 'Paladins') {
+    isAdmin = true;
+    currentPassphrase = passphrase;
+    updateAdminUI();
+  } else if (passphrase !== null) {
+    alert('パスフレーズが正しくありません。');
+  }
+});
+
+document.getElementById('exit-admin-btn').addEventListener('click', () => {
+  isAdmin = false;
+  currentPassphrase = null;
+  updateAdminUI();
+});
+
 document.getElementById('add-concept-btn').addEventListener('click', () => {
+  if (!isAdmin) return;
+
   updateActiveNav(null);
   setView('add');
 
@@ -187,9 +229,12 @@ document.getElementById('add-concept-btn').addEventListener('click', () => {
       const newId = crypto.randomUUID();
 
       try {
-        const { error } = await supabase.from('concepts').insert([
-          { id: newId, title, explanation }
-        ]);
+        const { error } = await supabase.rpc('add_concept', {
+          p_passphrase: currentPassphrase,
+          p_id: newId,
+          p_title: title,
+          p_explanation: explanation
+        });
 
         if (error) throw error;
 
@@ -215,6 +260,7 @@ document.getElementById('add-concept-btn').addEventListener('click', () => {
 const initApp = async () => {
   const data = await fetchConcepts();
   renderSidebar(data);
+  updateAdminUI();
   setView('home');
 };
 

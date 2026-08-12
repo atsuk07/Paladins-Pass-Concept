@@ -106,6 +106,31 @@ body {
   background-color: var(--accent-hover);
 }
 
+.btn-secondary {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: transparent;
+  color: var(--sidebar-text);
+  border: 1px solid var(--sidebar-hover);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: var(--sidebar-hover);
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+.hidden {
+  display: none !important;
+}
+
 /* Main Content Styles */
 .main-content {
   flex-grow: 1;
