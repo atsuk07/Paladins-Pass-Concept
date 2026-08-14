@@ -8,22 +8,24 @@
   </head>
   <body>
     <div class="app-container">
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <h1>Paladins Pass Concept</h1>
-        </div>
-        <nav class="sidebar-nav">
-          <h2>コンセプト</h2>
-          <ul id="concept-list">
-            <!-- Concepts dynamically rendered here from Supabase -->
-          </ul>
-        </nav>
+      <div class="sidebar-wrapper">
+        <aside class="sidebar">
+          <div class="sidebar-header">
+            <h1>Paladins Pass Concept</h1>
+          </div>
+          <nav class="sidebar-nav">
+            <h2>コンセプト</h2>
+            <ul id="concept-list">
+              <!-- Concepts dynamically rendered here from Supabase -->
+            </ul>
+          </nav>
+        </aside>
         <div class="sidebar-footer">
           <button id="add-concept-btn" class="btn-primary hidden">＋ コンセプトを追加</button>
           <button id="admin-mode-btn" class="btn-secondary mt-2">管理者モード</button>
           <button id="exit-admin-btn" class="btn-secondary mt-2 hidden">管理者モード終了</button>
         </div>
-      </aside>
+      </div>
 
       <main class="main-content" id="main-content">
         <!-- Content will be injected here dynamically -->

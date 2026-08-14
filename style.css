@@ -32,13 +32,24 @@ body {
 }
 
 /* Sidebar Styles */
-.sidebar {
+.sidebar-wrapper {
   width: 280px;
   background-color: var(--sidebar-bg);
-  color: var(--sidebar-text);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar {
+  width: 100%;
+  color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow-y: auto;
 }
 
 .sidebar-header {
@@ -55,7 +66,6 @@ body {
 .sidebar-nav {
   padding: 1.5rem 0;
   flex-grow: 1;
-  overflow-y: auto;
 }
 
 .sidebar-nav h2 {
@@ -87,6 +97,7 @@ body {
 .sidebar-footer {
   padding: 1.5rem;
   border-top: 1px solid var(--sidebar-hover);
+  background-color: var(--sidebar-bg);
 }
 
 .btn-primary {
@@ -246,6 +257,12 @@ textarea.form-control {
 @media (max-width: 768px) {
   .app-container {
     flex-direction: column;
+  }
+
+  .sidebar-wrapper {
+    width: 100%;
+    height: auto;
+    position: relative;
   }
 
   .sidebar {
