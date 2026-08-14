@@ -89,7 +89,12 @@ const renderConceptDetail = (conceptKey) => {
     : renderImages([{ url: '', caption: '例の画像 1 プレースホルダー' }]); // Fallback for testing if empty
 
   const editButtonHTML = isAdmin
-    ? `<button id="edit-concept-btn" class="btn-secondary" data-id="${conceptKey}" style="margin-left: auto;">編集 (管理者)</button>`
+    ? `
+      <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+        <button id="edit-concept-btn" class="btn-secondary" data-id="${conceptKey}">編集 (管理者)</button>
+        <button id="delete-concept-btn" class="btn-secondary" data-id="${conceptKey}" style="background-color: #ef4444; color: white;">削除</button>
+      </div>
+    `
     : '';
 
   return `
@@ -343,6 +348,31 @@ const setView = (view, data = null) => {
       editBtn.addEventListener('click', (e) => {
         const id = e.target.getAttribute('data-id');
         setView('edit', id);
+      });
+    }
+
+    // Attach event listener for delete concept button
+    const delBtn = document.getElementById('delete-concept-btn');
+    if (delBtn) {
+      delBtn.addEventListener('click', async (e) => {
+        const id = e.target.getAttribute('data-id');
+        if (!confirm('本当にこのコンセプトを削除しますか？')) return;
+
+        try {
+          const { error } = await supabase.rpc('delete_concept', {
+            p_passphrase: currentPassphrase,
+            p_id: id
+          });
+          if (error) throw error;
+
+          alert('コンセプトが削除されました。');
+          const updatedData = await fetchConcepts();
+          renderSidebar(updatedData);
+          setView('home');
+        } catch (error) {
+          console.error('コンセプト削除エラー:', error);
+          alert('コンセプトの削除に失敗しました。');
+        }
       });
     }
   } else if (view === 'add') {

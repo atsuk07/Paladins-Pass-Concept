@@ -88,3 +88,23 @@ CREATE POLICY "Public Delete Access"
 ON storage.objects FOR DELETE
 USING ( bucket_id = 'photos' );
 ```
+
+## 5. delete_concept
+This function securely deletes a concept from the `concepts` table by its id.
+
+```sql
+create or replace function delete_concept(p_passphrase text, p_id text)
+returns void
+language plpgsql
+security definer
+as $$
+begin
+  if p_passphrase != 'Paladins' then
+    raise exception 'Invalid passphrase';
+  end if;
+
+  delete from concepts
+  where id = p_id;
+end;
+$$;
+```
