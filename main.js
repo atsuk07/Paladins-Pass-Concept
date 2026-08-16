@@ -430,6 +430,12 @@ document.getElementById('admin-mode-btn').addEventListener('click', () => {
     isAdmin = true;
     currentPassphrase = passphrase;
     updateAdminUI();
+
+    // Re-render current view to immediately show edit/delete buttons if viewing a concept
+    const activeNav = document.querySelector('.nav-link.active');
+    if (activeNav) {
+      setView('concept', activeNav.dataset.concept);
+    }
   } else if (passphrase !== null) {
     alert('パスフレーズが正しくありません。');
   }
@@ -439,6 +445,17 @@ document.getElementById('exit-admin-btn').addEventListener('click', () => {
   isAdmin = false;
   currentPassphrase = null;
   updateAdminUI();
+
+  // Re-render current view to immediately hide edit/delete buttons
+  const activeNav = document.querySelector('.nav-link.active');
+  if (activeNav) {
+    setView('concept', activeNav.dataset.concept);
+  } else {
+    // If on home page, re-render it just in case
+    if (!mainContent.innerHTML.includes('add-concept-form')) {
+        setView('home');
+    }
+  }
 });
 
 document.getElementById('add-concept-btn').addEventListener('click', () => {
