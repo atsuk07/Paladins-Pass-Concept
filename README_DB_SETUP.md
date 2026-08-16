@@ -44,10 +44,10 @@ $$;
 ```
 
 ## 3. delete_photo
-This function securely deletes a record from the `photos` table by its id.
+This function securely deletes a record from the `photos` table by its id. If your photos id is a bigint instead of uuid, you may change `uuid` to `bigint` below.
 
 ```sql
-create or replace function delete_photo(p_passphrase text, p_id bigint)
+create or replace function delete_photo(p_passphrase text, p_id uuid)
 returns void
 language plpgsql
 security definer
@@ -63,7 +63,27 @@ end;
 $$;
 ```
 
-## 4. Storage Bucket Policies (`photos` bucket)
+## 4. delete_concept
+This function securely deletes a concept from the `concepts` table by its id.
+
+```sql
+create or replace function delete_concept(p_passphrase text, p_id text)
+returns void
+language plpgsql
+security definer
+as $$
+begin
+  if p_passphrase != 'Paladins' then
+    raise exception 'Invalid passphrase';
+  end if;
+
+  delete from concepts
+  where id = p_id;
+end;
+$$;
+```
+
+## 5. Storage Bucket Policies (`photos` bucket)
 Standard Supabase Storage RLS policies only recognize users authenticated via Supabase Auth (JWT). Because we are using a custom lightweight passphrase check on the frontend, Storage uploads from the client are considered "anonymous".
 
 To allow the frontend to upload and delete images without breaking the application, you must apply the following public access policies to the `photos` bucket.
@@ -87,24 +107,7 @@ WITH CHECK ( bucket_id = 'photos' );
 CREATE POLICY "Public Delete Access"
 ON storage.objects FOR DELETE
 USING ( bucket_id = 'photos' );
-```
 
-## 5. delete_concept
-This function securely deletes a concept from the `concepts` table by its id.
-
-```sql
-create or replace function delete_concept(p_passphrase text, p_id text)
-returns void
-language plpgsql
-security definer
-as $$
-begin
-  if p_passphrase != 'Paladins' then
-    raise exception 'Invalid passphrase';
-  end if;
-
-  delete from concepts
-  where id = p_id;
-end;
-$$;
+-- Always reload schema after creating RPCs
+NOTIFY pgrst, 'reload schema';
 ```

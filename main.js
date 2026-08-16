@@ -91,8 +91,8 @@ const renderConceptDetail = (conceptKey) => {
   const editButtonHTML = isAdmin
     ? `
       <div style="margin-left: auto; display: flex; gap: 0.5rem;">
-        <button id="edit-concept-btn" class="btn-secondary" data-id="${conceptKey}">編集 (管理者)</button>
-        <button id="delete-concept-btn" class="btn-secondary" data-id="${conceptKey}" style="background-color: #ef4444; color: white;">削除</button>
+        <button id="edit-concept-btn" class="btn-secondary" data-id="${conceptKey}" style="color: var(--primary-color); border-color: var(--primary-color);">編集 (管理者)</button>
+        <button id="delete-concept-btn" class="btn-secondary" data-id="${conceptKey}" style="background-color: #ef4444; color: white; border-color: #ef4444;">削除</button>
       </div>
     `
     : '';
