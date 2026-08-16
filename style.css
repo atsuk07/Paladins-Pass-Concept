@@ -1,14 +1,14 @@
 :root {
   --primary-color: #0f172a;
-  --sidebar-bg: #1e293b;
+  --sidebar-bg: #0a0a0a;
   --sidebar-text: #f8fafc;
-  --sidebar-hover: #334155;
+  --sidebar-hover: #1a1a1a;
   --main-bg: #f1f5f9;
   --text-dark: #0f172a;
   --text-light: #475569;
   --border-color: #cbd5e1;
-  --accent-color: #2563eb;
-  --accent-hover: #1d4ed8;
+  --accent-color: #c5a059; /* Elegant gold */
+  --accent-hover: #b38e4a; /* Darker gold */
   --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -54,13 +54,14 @@ body {
 
 .sidebar-header {
   padding: 1.5rem;
-  border-bottom: 1px solid var(--sidebar-hover);
+  border-bottom: 1px solid rgba(197, 160, 89, 0.3); /* Subtle gold border */
 }
 
 .sidebar-header h1 {
   font-size: 1.25rem;
   font-weight: bold;
   letter-spacing: 0.5px;
+  color: var(--accent-color); /* Gold title */
 }
 
 .clickable-header {
@@ -103,32 +104,35 @@ body {
 }
 
 .sidebar-nav li a.active {
-  background-color: #3b82f6; /* brighter blue for better contrast */
-  color: #ffffff; /* ensure text is visible */
+  background-color: var(--sidebar-hover);
+  color: var(--accent-color); /* Gold text for active item */
   font-weight: bold;
+  border-left: 4px solid var(--accent-color); /* Gold left border accent */
+  padding-left: calc(1.5rem - 4px); /* Adjust padding to account for border */
 }
 
 .sidebar-footer {
   padding: 1.5rem;
-  border-top: 1px solid var(--sidebar-hover);
+  border-top: 1px solid rgba(197, 160, 89, 0.3); /* Subtle gold border */
   background-color: var(--sidebar-bg);
 }
 
 .btn-primary {
   width: 100%;
   padding: 0.75rem;
-  background-color: var(--accent-color);
-  color: white;
-  border: none;
+  background-color: #111111;
+  color: var(--accent-color);
+  border: 1px solid var(--accent-color);
   border-radius: 4px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .btn-primary:hover {
-  background-color: var(--accent-hover);
+  background-color: var(--accent-color);
+  color: #000000;
 }
 
 .btn-secondary {
@@ -136,7 +140,7 @@ body {
   padding: 0.75rem;
   background-color: transparent;
   color: var(--sidebar-text);
-  border: 1px solid var(--sidebar-hover);
+  border: 1px solid #333333;
   border-radius: 4px;
   font-size: 0.9rem;
   font-weight: 600;
@@ -145,7 +149,9 @@ body {
 }
 
 .btn-secondary:hover {
-  background-color: var(--sidebar-hover);
+  background-color: #222222;
+  border-color: rgba(197, 160, 89, 0.5);
+  color: var(--accent-color);
 }
 
 .mt-2 {
