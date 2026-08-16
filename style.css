@@ -103,6 +103,35 @@ body {
   background-color: var(--sidebar-hover);
 }
 
+.nav-item-wrapper {
+  display: flex;
+  align-items: stretch;
+}
+
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  cursor: grab;
+  color: var(--border-color);
+  background-color: transparent;
+  user-select: none;
+  font-size: 1.2rem;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.nav-item-wrapper.dragging {
+  opacity: 0.5;
+}
+
+.nav-item-wrapper .nav-link {
+  flex-grow: 1;
+}
+
 .sidebar-nav li a.active {
   background-color: var(--sidebar-hover);
   color: var(--accent-color); /* Gold text for active item */

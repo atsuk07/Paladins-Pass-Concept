@@ -15,10 +15,19 @@ const fetchConcepts = async () => {
   try {
     const { data, error } = await supabase
       .from('concepts')
-      .select('*')
-      .order('created_at', { ascending: true });
+      .select('*');
 
     if (error) throw error;
+
+    // Attempt to order by display_order first, then fallback to created_at
+    data.sort((a, b) => {
+      const orderA = a.display_order ?? Number.MAX_SAFE_INTEGER;
+      const orderB = b.display_order ?? Number.MAX_SAFE_INTEGER;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return new Date(a.created_at) - new Date(b.created_at);
+    });
 
     // Fetch photos separately if join fails due to schema cache issues
     let photosData = [];
@@ -188,8 +197,80 @@ const renderSidebar = (dataList) => {
   if (!conceptListEl || !dataList) return;
 
   conceptListEl.innerHTML = dataList.map(concept => `
-    <li><a href="#" data-concept="${concept.id}" class="nav-link">${concept.title}</a></li>
+    <li class="nav-item-wrapper" data-id="${concept.id}" draggable="${isAdmin ? 'true' : 'false'}">
+      ${isAdmin ? '<span class="drag-handle" title="ドラッグして並び替え">≡</span>' : ''}
+      <a href="#" data-concept="${concept.id}" class="nav-link">${concept.title}</a>
+    </li>
   `).join('');
+
+  if (isAdmin) {
+    attachDragAndDropListeners();
+  }
+};
+
+let draggedItem = null;
+
+const attachDragAndDropListeners = () => {
+  const listItems = document.querySelectorAll('#concept-list .nav-item-wrapper');
+  const conceptList = document.getElementById('concept-list');
+
+  listItems.forEach(item => {
+    item.addEventListener('dragstart', function(e) {
+      draggedItem = item;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', ''); // Required for Firefox
+      setTimeout(() => item.classList.add('dragging'), 0);
+    });
+
+    item.addEventListener('dragend', function() {
+      draggedItem = null;
+      item.classList.remove('dragging');
+
+      // Show save order button if order changed
+      const saveOrderBtn = document.getElementById('save-order-btn');
+      if(saveOrderBtn) saveOrderBtn.classList.remove('hidden');
+    });
+
+    item.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+
+      if (item === draggedItem) return;
+
+      const bounding = item.getBoundingClientRect();
+      const offset = bounding.y + (bounding.height / 2);
+
+      if (e.clientY - offset > 0) {
+        item.style.borderBottom = '2px solid var(--accent-color)';
+        item.style.borderTop = '';
+      } else {
+        item.style.borderTop = '2px solid var(--accent-color)';
+        item.style.borderBottom = '';
+      }
+    });
+
+    item.addEventListener('dragleave', function() {
+      item.style.borderTop = '';
+      item.style.borderBottom = '';
+    });
+
+    item.addEventListener('drop', function(e) {
+      e.preventDefault();
+      item.style.borderTop = '';
+      item.style.borderBottom = '';
+
+      if (item === draggedItem) return;
+
+      const bounding = item.getBoundingClientRect();
+      const offset = bounding.y + (bounding.height / 2);
+
+      if (e.clientY - offset > 0) {
+        conceptList.insertBefore(draggedItem, item.nextSibling);
+      } else {
+        conceptList.insertBefore(draggedItem, item);
+      }
+    });
+  });
 };
 
 // App State & Rendering
@@ -356,18 +437,51 @@ const setView = (view, data = null) => {
     if (delBtn) {
       delBtn.addEventListener('click', async (e) => {
         const id = e.target.getAttribute('data-id');
-        if (!confirm('本当にこのコンセプトを削除しますか？')) return;
+        if (!confirm('本当にこのコンセプトを削除しますか？\n（関連するすべての画像も削除されます）')) return;
 
         try {
+          // 1. Fetch photos associated with this concept
+          const conceptToDelete = concepts[id];
+          if (conceptToDelete && conceptToDelete.photos && conceptToDelete.photos.length > 0) {
+            const storagePaths = [];
+
+            for (const photo of conceptToDelete.photos) {
+              if (photo.storage_path) {
+                storagePaths.push(photo.storage_path);
+              }
+            }
+
+            // 3. Delete files from Supabase Storage
+            if (storagePaths.length > 0) {
+              const { error: storageError } = await supabase.storage.from('photos').remove(storagePaths);
+              if (storageError) {
+                console.warn('Failed to remove some files from storage, continuing...', storageError);
+              }
+            }
+
+            // 4. Delete record from public.photos
+            for (const photo of conceptToDelete.photos) {
+              try {
+                await supabase.rpc('delete_photo', {
+                  p_passphrase: currentPassphrase,
+                  p_id: photo.id
+                });
+              } catch(err) {
+                console.warn('Failed to delete photo DB record, continuing...', err);
+              }
+            }
+          }
+
+          // 5. Delete concept from public.concepts
           const { error } = await supabase.rpc('delete_concept', {
             p_passphrase: currentPassphrase,
             p_id: id
           });
           if (error) throw error;
 
-          alert('コンセプトが削除されました。');
+          alert('コンセプトとその画像が削除されました。');
           const updatedData = await fetchConcepts();
-          renderSidebar(updatedData);
+          renderSidebar(Object.values(updatedData));
           setView('home');
         } catch (error) {
           console.error('コンセプト削除エラー:', error);
@@ -397,20 +511,41 @@ const updateAdminUI = () => {
   const addBtn = document.getElementById('add-concept-btn');
   const adminBtn = document.getElementById('admin-mode-btn');
   const exitAdminBtn = document.getElementById('exit-admin-btn');
+  const saveOrderBtn = document.getElementById('save-order-btn');
 
   if (isAdmin) {
     addBtn.classList.remove('hidden');
     exitAdminBtn.classList.remove('hidden');
     adminBtn.classList.add('hidden');
+    if(saveOrderBtn) saveOrderBtn.classList.add('hidden'); // Initially hidden until drag finishes
   } else {
     addBtn.classList.add('hidden');
     exitAdminBtn.classList.add('hidden');
     adminBtn.classList.remove('hidden');
+    if(saveOrderBtn) saveOrderBtn.classList.add('hidden');
 
     // If we are on the Add Concept view and lose admin privileges, go home
     if (mainContent.innerHTML.includes('add-concept-form')) {
       setView('home');
     }
+  }
+
+  // Re-render sidebar to apply draggable state
+  renderSidebar(Object.values(concepts).sort((a,b) => {
+      const orderA = a.display_order ?? Number.MAX_SAFE_INTEGER;
+      const orderB = b.display_order ?? Number.MAX_SAFE_INTEGER;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return new Date(a.created_at) - new Date(b.created_at);
+  }));
+
+  // Re-apply active nav if one is selected
+  const activeNav = document.querySelector('.main-content .concept-title');
+  if (activeNav) {
+      // Find the ID of currently displayed concept
+      const currentConceptId = Object.values(concepts).find(c => c.title === activeNav.textContent)?.id;
+      if (currentConceptId) updateActiveNav(currentConceptId);
   }
 };
 
@@ -457,6 +592,53 @@ document.getElementById('exit-admin-btn').addEventListener('click', () => {
     }
   }
 });
+
+// Save Order Event Listener
+const saveOrderBtn = document.getElementById('save-order-btn');
+if (saveOrderBtn) {
+  saveOrderBtn.addEventListener('click', async () => {
+    if (!isAdmin) return;
+
+    const items = document.querySelectorAll('#concept-list .nav-item-wrapper');
+    const orders = Array.from(items).map((item, index) => ({
+      id: item.dataset.id,
+      display_order: index
+    }));
+
+    saveOrderBtn.textContent = '保存中...';
+    saveOrderBtn.disabled = true;
+
+    try {
+      const { error } = await supabase.rpc('update_concept_order', {
+        p_passphrase: currentPassphrase,
+        p_orders: orders
+      });
+
+      if (error) throw error;
+
+      alert('並び順を保存しました。');
+      saveOrderBtn.classList.add('hidden');
+
+      // Update local cache manually to reflect order immediately without refetch
+      orders.forEach(o => {
+        if (concepts[o.id]) {
+          concepts[o.id].display_order = o.display_order;
+        }
+      });
+
+    } catch (error) {
+      console.error('並び順の保存エラー:', error);
+      if (error.message && error.message.includes('Could not find the function')) {
+         alert('並び順を保存できませんでした。README_DB_SETUP.mdの「6. Add Ordering Support」のSQLをSupabaseで実行してください。');
+      } else {
+         alert('並び順の保存に失敗しました。');
+      }
+    } finally {
+      saveOrderBtn.textContent = '並び替えを保存';
+      saveOrderBtn.disabled = false;
+    }
+  });
+}
 
 document.getElementById('add-concept-btn').addEventListener('click', () => {
   if (!isAdmin) return;

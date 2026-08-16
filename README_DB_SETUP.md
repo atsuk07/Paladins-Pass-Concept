@@ -111,3 +111,49 @@ USING ( bucket_id = 'photos' );
 -- Always reload schema after creating RPCs
 NOTIFY pgrst, 'reload schema';
 ```
+
+## 6. Add Ordering Support (Phase 2)
+To support dragging and dropping concepts into a custom order, we need to add a `display_order` column and an RPC to update it securely.
+
+Run this SQL in the SQL Editor:
+
+```sql
+-- Add the new column
+-- Using a very high default number ensures new concepts naturally sort to the end of the list
+ALTER TABLE concepts ADD COLUMN display_order INT DEFAULT 999999;
+
+-- Initialize existing concepts with a sequential order based on created_at
+WITH numbered AS (
+  SELECT id, ROW_NUMBER() OVER(ORDER BY created_at ASC) as rn
+  FROM concepts
+)
+UPDATE concepts c
+SET display_order = n.rn
+FROM numbered n
+WHERE c.id = n.id;
+
+-- Create the RPC to securely update the order of multiple concepts at once
+create or replace function update_concept_order(p_passphrase text, p_orders jsonb)
+returns void
+language plpgsql
+security definer
+as $$
+declare
+  order_item jsonb;
+begin
+  if p_passphrase != 'Paladins' then
+    raise exception 'Invalid passphrase';
+  end if;
+
+  for order_item in select * from jsonb_array_elements(p_orders)
+  loop
+    update concepts
+    set display_order = (order_item->>'display_order')::int
+    where id = order_item->>'id';
+  end loop;
+end;
+$$;
+
+-- Always reload schema after creating RPCs
+NOTIFY pgrst, 'reload schema';
+```
