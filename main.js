@@ -448,6 +448,14 @@ document.getElementById('add-concept-btn').addEventListener('click', () => {
   setView('add');
 });
 
+const sidebarHomeLink = document.getElementById('sidebar-home-link');
+if (sidebarHomeLink) {
+  sidebarHomeLink.addEventListener('click', () => {
+    updateActiveNav(null);
+    setView('home');
+  });
+}
+
 // Initialize App
 const initApp = async () => {
   const data = await fetchConcepts();

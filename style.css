@@ -63,6 +63,15 @@ body {
   letter-spacing: 0.5px;
 }
 
+.clickable-header {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.clickable-header:hover {
+  opacity: 0.8;
+}
+
 .sidebar-nav {
   padding: 1.5rem 0;
   flex-grow: 1;
@@ -89,9 +98,14 @@ body {
   transition: background-color 0.2s;
 }
 
-.sidebar-nav li a:hover,
-.sidebar-nav li a.active {
+.sidebar-nav li a:hover {
   background-color: var(--sidebar-hover);
+}
+
+.sidebar-nav li a.active {
+  background-color: #3b82f6; /* brighter blue for better contrast */
+  color: #ffffff; /* ensure text is visible */
+  font-weight: bold;
 }
 
 .sidebar-footer {
@@ -186,7 +200,7 @@ body {
 }
 
 .section-title {
-  font-size: 1.75rem;
+  font-size: 1.5rem; /* reduced from 1.75rem */
   color: var(--primary-color);
   margin-bottom: 1.5rem;
 }
