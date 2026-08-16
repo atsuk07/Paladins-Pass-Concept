@@ -417,11 +417,36 @@ const attachFormListeners = () => {
   });
 };
 
+// Mobile Sidebar Toggle
+const toggleMobileSidebar = (forceCollapse = false) => {
+  const sidebar = document.getElementById('sidebar-wrapper');
+  if (sidebar) {
+    if (forceCollapse) {
+      sidebar.classList.add('collapsed');
+    } else {
+      sidebar.classList.toggle('collapsed');
+    }
+  }
+};
+
+const updateMobileHeaderTitle = (title) => {
+  const titleEl = document.getElementById('mobile-header-title');
+  if (titleEl) {
+    titleEl.textContent = title;
+  }
+};
+
+document.getElementById('mobile-menu-btn')?.addEventListener('click', () => toggleMobileSidebar());
+
+
 const setView = (view, data = null) => {
   if (view === 'home') {
     mainContent.innerHTML = renderHome();
+    updateMobileHeaderTitle('Paladins Pass Concept');
   } else if (view === 'concept') {
     mainContent.innerHTML = renderConceptDetail(data);
+    const conceptObj = typeof data === 'string' ? concepts[data] : data;
+    updateMobileHeaderTitle(conceptObj?.title || 'コンセプト詳細');
 
     // Attach event listener for edit button
     const editBtn = document.getElementById('edit-concept-btn');
@@ -491,9 +516,11 @@ const setView = (view, data = null) => {
     }
   } else if (view === 'add') {
     mainContent.innerHTML = renderAddConcept();
+    updateMobileHeaderTitle('コンセプトを追加');
     attachFormListeners();
   } else if (view === 'edit') {
     mainContent.innerHTML = renderAddConcept(data); // Reusing add form for editing
+    updateMobileHeaderTitle('コンセプトを編集');
     attachFormListeners();
   }
 };
@@ -556,6 +583,11 @@ document.getElementById('concept-list').addEventListener('click', (e) => {
     const conceptKey = e.target.dataset.concept;
     updateActiveNav(conceptKey);
     setView('concept', conceptKey);
+
+    // Collapse sidebar on mobile after selecting a concept
+    if (window.innerWidth <= 768) {
+      toggleMobileSidebar(true);
+    }
   }
 });
 
@@ -645,6 +677,9 @@ document.getElementById('add-concept-btn').addEventListener('click', () => {
 
   updateActiveNav(null);
   setView('add');
+  if (window.innerWidth <= 768) {
+    toggleMobileSidebar(true);
+  }
 });
 
 const sidebarHomeLink = document.getElementById('sidebar-home-link');
@@ -652,6 +687,9 @@ if (sidebarHomeLink) {
   sidebarHomeLink.addEventListener('click', () => {
     updateActiveNav(null);
     setView('home');
+    if (window.innerWidth <= 768) {
+      toggleMobileSidebar(true);
+    }
   });
 }
 

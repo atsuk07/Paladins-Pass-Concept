@@ -31,6 +31,33 @@ body {
   min-height: 100vh;
 }
 
+/* Mobile Header */
+.mobile-header {
+  display: none;
+  background-color: var(--sidebar-bg);
+  color: var(--accent-color);
+  padding: 1rem 1.5rem;
+  align-items: center;
+  border-bottom: 1px solid rgba(197, 160, 89, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.mobile-menu-btn {
+  background: transparent;
+  border: none;
+  color: var(--sidebar-text);
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-right: 1rem;
+}
+
+.mobile-header-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
 /* Sidebar Styles */
 .sidebar-wrapper {
   width: 280px;
@@ -308,10 +335,19 @@ textarea.form-control {
     flex-direction: column;
   }
 
+  .mobile-header {
+    display: flex;
+  }
+
   .sidebar-wrapper {
     width: 100%;
     height: auto;
     position: relative;
+    border-bottom: 1px solid rgba(197, 160, 89, 0.3);
+  }
+
+  .sidebar-wrapper.collapsed {
+    display: none;
   }
 
   .sidebar {
