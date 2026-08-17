@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import Sortable from 'sortablejs';
 
 // Initialize Supabase Client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -208,68 +209,26 @@ const renderSidebar = (dataList) => {
   }
 };
 
-let draggedItem = null;
+let sortableInstance = null;
 
 const attachDragAndDropListeners = () => {
-  const listItems = document.querySelectorAll('#concept-list .nav-item-wrapper');
   const conceptList = document.getElementById('concept-list');
 
-  listItems.forEach(item => {
-    item.addEventListener('dragstart', function(e) {
-      draggedItem = item;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', ''); // Required for Firefox
-      setTimeout(() => item.classList.add('dragging'), 0);
-    });
+  if (sortableInstance) {
+    sortableInstance.destroy();
+  }
 
-    item.addEventListener('dragend', function() {
-      draggedItem = null;
-      item.classList.remove('dragging');
-
+  sortableInstance = new Sortable(conceptList, {
+    animation: 150,
+    handle: '.drag-handle', // Only drag when clicking on the handle
+    ghostClass: 'dragging', // Class for the drop placeholder
+    onEnd: function (evt) {
       // Show save order button if order changed
-      const saveOrderBtn = document.getElementById('save-order-btn');
-      if(saveOrderBtn) saveOrderBtn.classList.remove('hidden');
-    });
-
-    item.addEventListener('dragover', function(e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-
-      if (item === draggedItem) return;
-
-      const bounding = item.getBoundingClientRect();
-      const offset = bounding.y + (bounding.height / 2);
-
-      if (e.clientY - offset > 0) {
-        item.style.borderBottom = '2px solid var(--accent-color)';
-        item.style.borderTop = '';
-      } else {
-        item.style.borderTop = '2px solid var(--accent-color)';
-        item.style.borderBottom = '';
+      if (evt.oldIndex !== evt.newIndex) {
+        const saveOrderBtn = document.getElementById('save-order-btn');
+        if(saveOrderBtn) saveOrderBtn.classList.remove('hidden');
       }
-    });
-
-    item.addEventListener('dragleave', function() {
-      item.style.borderTop = '';
-      item.style.borderBottom = '';
-    });
-
-    item.addEventListener('drop', function(e) {
-      e.preventDefault();
-      item.style.borderTop = '';
-      item.style.borderBottom = '';
-
-      if (item === draggedItem) return;
-
-      const bounding = item.getBoundingClientRect();
-      const offset = bounding.y + (bounding.height / 2);
-
-      if (e.clientY - offset > 0) {
-        conceptList.insertBefore(draggedItem, item.nextSibling);
-      } else {
-        conceptList.insertBefore(draggedItem, item);
-      }
-    });
+    },
   });
 };
 
@@ -465,46 +424,29 @@ const setView = (view, data = null) => {
         if (!confirm('本当にこのコンセプトを削除しますか？\n（関連するすべての画像も削除されます）')) return;
 
         try {
-          // 1. Fetch photos associated with this concept
+          // 1. Storage cleanup: delete actual files from Supabase Storage bucket first
           const conceptToDelete = concepts[id];
           if (conceptToDelete && conceptToDelete.photos && conceptToDelete.photos.length > 0) {
-            const storagePaths = [];
+            const storagePaths = conceptToDelete.photos
+              .map(photo => photo.storage_path)
+              .filter(path => path); // Filter out nulls/undefined
 
-            for (const photo of conceptToDelete.photos) {
-              if (photo.storage_path) {
-                storagePaths.push(photo.storage_path);
-              }
-            }
-
-            // 3. Delete files from Supabase Storage
             if (storagePaths.length > 0) {
               const { error: storageError } = await supabase.storage.from('photos').remove(storagePaths);
               if (storageError) {
                 console.warn('Failed to remove some files from storage, continuing...', storageError);
               }
             }
-
-            // 4. Delete record from public.photos
-            for (const photo of conceptToDelete.photos) {
-              try {
-                await supabase.rpc('delete_photo', {
-                  p_passphrase: currentPassphrase,
-                  p_id: photo.id
-                });
-              } catch(err) {
-                console.warn('Failed to delete photo DB record, continuing...', err);
-              }
-            }
           }
 
-          // 5. Delete concept from public.concepts
+          // 2. DB cleanup: delete concept and photos from DB atomically via RPC
           const { error } = await supabase.rpc('delete_concept', {
             p_passphrase: currentPassphrase,
             p_id: id
           });
           if (error) throw error;
 
-          alert('コンセプトとその画像が削除されました。');
+          alert('コンセプトと画像データが正常に削除されました。');
           const updatedData = await fetchConcepts();
           renderSidebar(Object.values(updatedData));
           setView('home');

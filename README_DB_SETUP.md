@@ -64,7 +64,7 @@ $$;
 ```
 
 ## 4. delete_concept
-This function securely deletes a concept from the `concepts` table by its id.
+This function securely deletes a concept from the `concepts` table by its id. It also guarantees that any associated records in the `photos` table are deleted atomically from the database to prevent orphaned data.
 
 ```sql
 create or replace function delete_concept(p_passphrase text, p_id text)
@@ -77,6 +77,11 @@ begin
     raise exception 'Invalid passphrase';
   end if;
 
+  -- Delete associated photos from DB first to maintain referential integrity
+  delete from photos
+  where concept_id = p_id;
+
+  -- Delete the concept
   delete from concepts
   where id = p_id;
 end;
@@ -110,6 +115,25 @@ USING ( bucket_id = 'photos' );
 
 -- Always reload schema after creating RPCs
 NOTIFY pgrst, 'reload schema';
+```
+
+## 7. Cleaning up Orphaned Photos (Maintenance)
+If you previously deleted concepts before the atomic deletion strategy was implemented, you may have "orphaned" photo records in your `public.photos` table and storage bucket.
+
+### Step 1: Identify orphaned files in Storage
+SQL cannot delete files from Supabase Storage directly. Run this query to get a list of orphaned file paths:
+```sql
+SELECT storage_path
+FROM photos
+WHERE concept_id NOT IN (SELECT id FROM concepts);
+```
+Once you have the list of `storage_path`s, you can manually delete them by navigating to **Storage > photos** in your Supabase Dashboard and removing those files.
+
+### Step 2: Delete orphaned records from the DB
+Run this query in your Supabase SQL Editor to clean up the orphaned DB records now that the files are gone:
+```sql
+DELETE FROM photos
+WHERE concept_id NOT IN (SELECT id FROM concepts);
 ```
 
 ## 6. Add Ordering Support (Phase 2)

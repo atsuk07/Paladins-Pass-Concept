@@ -145,6 +145,7 @@ body {
   background-color: transparent;
   user-select: none;
   font-size: 1.2rem;
+  touch-action: none; /* Prevent scrolling when touching the drag handle on mobile */
 }
 
 .drag-handle:active {
@@ -153,6 +154,7 @@ body {
 
 .nav-item-wrapper.dragging {
   opacity: 0.5;
+  background-color: var(--sidebar-hover);
 }
 
 .nav-item-wrapper .nav-link {
